@@ -1,0 +1,7 @@
+# Add YouTube channels to mine for viral hits.
+# Supports: @handles, full URLs, or raw channel IDs (starting with UC...).
+# Edit this file freely — the research script reads it fresh every run.
+channels:
+  # - "@examplechannel1"
+  # - "https://www.youtube.com/@examplechannel2"
+  # - "UC_channelId_raw_starts_with_UC"

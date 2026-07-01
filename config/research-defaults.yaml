@@ -1,0 +1,7 @@
+# Default knobs for the research subsystem. Override per-run via CLI flags.
+recency_days: 60             # only consider videos published in the last N days
+min_views_per_day: 10000     # virality threshold; fallback = top 20% of channel's recent by views
+max_videos_per_channel: 5    # cap so one hit-machine doesn't dominate the output
+fetch_transcripts: true      # off = faster, less signal for downstream stages
+transcript_languages:        # tried in order; first match wins
+  - en

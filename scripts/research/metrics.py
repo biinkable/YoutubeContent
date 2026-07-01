@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
-from typing import Iterable
 
 
 def views_per_day(views: int, days_since_publish: int) -> float:

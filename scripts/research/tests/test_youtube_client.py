@@ -1,16 +1,27 @@
 """Tests for the YouTube API client wrapper. All API calls mocked."""
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, call, patch
 
 import pytest
+from googleapiclient.errors import HttpError
 
 from scripts.research.youtube_client import (
     ChannelNotFound,
     QuotaExceeded,
     ResolvedChannel,
     YouTubeClient,
+    _retry,
 )
+
+
+def _transient_http_error(status: int = 503) -> HttpError:
+    """Build a non-quota transient HttpError, same construction as the quota test."""
+    resp = MagicMock(status=status, reason="Service Unavailable")
+    return HttpError(
+        resp=resp,
+        content=b'{"error":{"errors":[{"reason":"backendError"}]}}',
+    )
 
 
 def _mock_service_for_channel(channel_id: str = "UC_test", uploads: str = "UU_test") -> MagicMock:
@@ -142,3 +153,27 @@ class TestQuotaError:
         client = YouTubeClient("k", service=svc)
         with pytest.raises(QuotaExceeded):
             client.resolve_channel("@x")
+
+
+class TestRetry:
+    def test_retries_transient_error_then_succeeds(self) -> None:
+        fn = MagicMock(
+            side_effect=[
+                _transient_http_error(503),
+                _transient_http_error(503),
+                "success",
+            ]
+        )
+        with patch("scripts.research.youtube_client.time.sleep") as mock_sleep:
+            result = _retry(fn)
+        assert result == "success"
+        assert fn.call_count == 3
+        assert mock_sleep.call_count == 2
+        mock_sleep.assert_has_calls([call(1.0), call(3.0)])
+
+    def test_raises_after_exhausting_retries(self) -> None:
+        fn = MagicMock(side_effect=_transient_http_error(500))
+        with patch("scripts.research.youtube_client.time.sleep") as mock_sleep:
+            with pytest.raises(HttpError):
+                _retry(fn, retries=3)
+        assert mock_sleep.call_count == 3

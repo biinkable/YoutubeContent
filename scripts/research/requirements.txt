@@ -1,5 +1,5 @@
 google-api-python-client>=2.140.0
-youtube-transcript-api>=0.6.2
+youtube-transcript-api>=1.0.0
 PyYAML>=6.0.2
 python-dotenv>=1.0.1
 pytest>=8.3.0

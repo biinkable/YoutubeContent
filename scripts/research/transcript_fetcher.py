@@ -19,10 +19,11 @@ def fetch_transcript(
         # imported lazily so tests don't need the package installed for pure-logic paths
         from youtube_transcript_api import YouTubeTranscriptApi
 
-        api = YouTubeTranscriptApi
+        api = YouTubeTranscriptApi()
     try:
-        segments = api.get_transcript(video_id, languages=languages)
+        fetched = api.fetch(video_id, languages=languages)
+        segments = fetched.to_raw_data() if hasattr(fetched, "to_raw_data") else fetched
+        text = " ".join(seg["text"] for seg in segments)
     except Exception:
         return (None, "none")
-    text = " ".join(seg["text"] for seg in segments)
     return (text, "captions")

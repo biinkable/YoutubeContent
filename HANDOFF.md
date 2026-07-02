@@ -60,7 +60,7 @@ on (human-in-the-loop).
   each character's own look** — *not* the ian-xiaohei hand-drawn house style.
   One recurring character per video. High quality with a preview step for new
   characters. Budget ≈ **$1/video** — much less on the default kie.ai provider
-  (~$0.06/image high vs OpenAI's ~$0.17).
+  ($0.05/image high vs OpenAI's ~$0.17).
 - **Image provider is swappable (default kie.ai for cost).** `KieImageClient` and
   `OpenAIImageClient` share one `generate()` interface; pick via `provider:` config
   or `--provider`. Chosen 2026-07-02 to cut per-video image cost.
@@ -120,9 +120,9 @@ download the result URL. `size`→`aspect_ratio` (1536x1024→3:2), `quality`→
 **CLI exit codes:** `0` ok · `2` missing key · `3` quota · `4` over
 max-images-per-run without `--allow-large` · `5` bad slug / empty beats / unknown
 provider · `6` provider/API error mid-run.
-**Cost (estimates):** kie.ai high(2K) `~$0.06`, medium(1K) `~$0.03`; OpenAI high
-`$0.17`, medium `$0.04`. kie numbers are guardrail estimates — confirm on the
-[kie.ai dashboard](https://kie.ai/api-key) and adjust `cost_per_image` in config.
+**Cost (confirmed 2026-07-02):** kie.ai high(2K) `$0.05` (10 credits), medium(1K)
+`$0.03` (6 credits); 4K `$0.08` available but not wired. OpenAI high `$0.17`,
+medium `$0.04`.
 
 **Smoke-tested against the real OpenAI GPT-image-2 API (Task 10, character "blobby").**
 The kie.ai path is fully covered by mocked unit tests; its live API surface is

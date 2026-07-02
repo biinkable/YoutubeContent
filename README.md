@@ -141,12 +141,13 @@ Cost depends on the provider. **kie.ai (default)** is markedly cheaper than Open
 
 | Provider | High (2K) | Medium (1K) |
 |----------|-----------|-------------|
-| kie.ai (default) | ~$0.06/image\* | ~$0.03/image\* |
+| kie.ai (default) | ~$0.05/image | ~$0.03/image |
 | OpenAI | ~$0.17/image | ~$0.04/image |
 
-\*kie.ai bills in credits — the USD figures are estimates used only for the pre-run cost
-guardrail. Confirm the real numbers on your [kie.ai dashboard](https://kie.ai/api-key) and
-adjust `cost_per_image` in `config/illustration-defaults.yaml`.
+kie.ai bills in credits; the USD figures above are the confirmed per-generation prices for
+GPT-image-2 image-to-image (2K = 10 credits, 1K = 6 credits; 4K = 16 credits ≈ $0.08 is also
+available but not wired to a quality tier). They drive only the pre-run cost print — adjust
+`cost_per_image` in `config/illustration-defaults.yaml` if kie's pricing changes.
 
 Images are generated at 1536×1024 (mapped to kie.ai aspect ratio 3:2).
 

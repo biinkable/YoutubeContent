@@ -5,9 +5,10 @@ size: "1536x1024"        # 16:9 landscape; mapped to kie aspect_ratio 3:2
 preview_count: 3         # sample frames generated when adding a new character
 max_images_per_run: 12   # guardrail; exceeding requires explicit confirmation
 
-# Estimated USD per image, used only for the pre-run cost print + manifest.
-# NOT billing. kie.ai bills in credits — confirm real numbers on your dashboard
-# (https://kie.ai/api-key) and adjust. Keys must match the `quality` values above.
+# USD per image for the pre-run cost print + manifest (NOT billing). Confirmed
+# 2026-07-02 from the kie.ai dashboard for gpt-image-2 image-to-image. kie bills
+# in credits; these are the USD-equivalent per-gen prices. 4K (16 credits, ~$0.08)
+# exists but isn't wired to a quality tier. Keys must match the `quality` values above.
 cost_per_image:
-  high: 0.06             # ~2K resolution (estimate — confirm on kie.ai dashboard)
-  medium: 0.03           # ~1K resolution (estimate — confirm on kie.ai dashboard)
+  high: 0.05             # 2K resolution = 10 credits
+  medium: 0.03           # 1K resolution = 6 credits

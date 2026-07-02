@@ -32,7 +32,9 @@ from scripts.illustration.image_result import GeneratedImage
 __all__ = ["GeneratedImage", "KieImageClient"]
 
 _BASE_URL = "https://api.kie.ai"
-_UPLOAD_PATH = "/api/file-base64-upload"
+# File uploads are served by a DIFFERENT host than the jobs API. Confirmed empirically:
+# api.kie.ai/api/file-base64-upload returns 404; the file-upload host is redpandaai.co.
+_UPLOAD_URL = "https://kieai.redpandaai.co/api/file-base64-upload"
 _CREATE_PATH = "/api/v1/jobs/createTask"
 _RECORD_PATH = "/api/v1/jobs/recordInfo"
 _MODEL = "gpt-image-2-image-to-image"
@@ -97,12 +99,14 @@ class KieImageClient:
         *,
         session: Any | None = None,
         base_url: str = _BASE_URL,
+        upload_url: str = _UPLOAD_URL,
         poll_interval: float = 3.0,
         poll_timeout: float = 300.0,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
+        self._upload_url = upload_url
         self._poll_interval = poll_interval
         self._poll_timeout = poll_timeout
         self._sleep = sleep
@@ -118,15 +122,15 @@ class KieImageClient:
     def _auth_headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self._api_key}", "Content-Type": "application/json"}
 
-    def _call_json(self, method: str, path: str, *, json_body: Any | None = None,
+    def _call_json(self, method: str, url: str, *, json_body: Any | None = None,
                    params: dict | None = None) -> dict:
-        """Call a kie.ai JSON endpoint, retrying transient failures.
+        """Call a kie.ai JSON endpoint (absolute URL), retrying transient failures.
 
         Raises the mapped taxonomy error on an HTTP or envelope-level failure.
         Task-level failures (``data.state == "fail"``) are NOT handled here —
         they come back as a normal 200 envelope and are inspected by the poller.
         """
-        url = self._base_url + path
+        label = url.rsplit("/", 1)[-1] or url
 
         def _do() -> dict:
             try:
@@ -135,19 +139,19 @@ class KieImageClient:
                     json=json_body, params=params, timeout=60,
                 )
             except Exception as e:  # network/socket failure -> retryable
-                raise TransientError(f"network error calling {path}: {e}") from e
+                raise TransientError(f"network error calling {label}: {e}") from e
             status = int(getattr(resp, "status_code", 200))
             if status == 429 or status >= 500:
-                raise TransientError(f"{path} returned HTTP {status}")
+                raise TransientError(f"{label} returned HTTP {status}")
             try:
                 body = resp.json()
             except Exception as e:
-                raise ApiError(f"{path} returned a non-JSON body (HTTP {status})") from e
+                raise ApiError(f"{label} returned a non-JSON body (HTTP {status})") from e
             code = body.get("code")
             if status >= 400 or (code is not None and str(code) != "200"):
                 _raise_for_kind(
                     _classify_message(str(code), str(body.get("msg", ""))),
-                    f"{path} failed (HTTP {status}, code={code}): {body.get('msg')}",
+                    f"{label} failed (HTTP {status}, code={code}): {body.get('msg')}",
                 )
             return body
 
@@ -163,7 +167,7 @@ class KieImageClient:
             "uploadPath": "images/youtubecontent",
             "fileName": path.name,
         }
-        body = self._call_json("POST", _UPLOAD_PATH, json_body=payload)
+        body = self._call_json("POST", self._upload_url, json_body=payload)
         url = (body.get("data") or {}).get("downloadUrl")
         if not url:
             raise ApiError(f"upload of {path.name} returned no downloadUrl")
@@ -180,7 +184,7 @@ class KieImageClient:
                 "resolution": resolution,
             },
         }
-        body = self._call_json("POST", _CREATE_PATH, json_body=payload)
+        body = self._call_json("POST", self._base_url + _CREATE_PATH, json_body=payload)
         task_id = (body.get("data") or {}).get("taskId")
         if not task_id:
             raise ApiError("createTask returned no taskId")
@@ -190,7 +194,7 @@ class KieImageClient:
         """Poll until the task succeeds (return the result URL) or fails/times out."""
         elapsed = 0.0
         while True:
-            data = self._call_json("GET", _RECORD_PATH, params={"taskId": task_id}).get("data") or {}
+            data = self._call_json("GET", self._base_url + _RECORD_PATH, params={"taskId": task_id}).get("data") or {}
             state = str(data.get("state", "")).lower()
             if state == _STATE_SUCCESS:
                 return _extract_result_url(data)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import subprocess
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -8,6 +10,26 @@ import pytest
 
 from scripts.illustration import generate_slideshow as gs
 from scripts.illustration.openai_image import GeneratedImage
+
+
+def test_script_runs_as_direct_file_invocation(tmp_path):
+    """Regression: the skill documents `python scripts/illustration/generate_slideshow.py ...`.
+    Python only puts the script's own directory on sys.path, so importing the `scripts`
+    namespace package used to fail (ModuleNotFoundError). The module now inserts the repo
+    root onto sys.path; verify the documented invocation works with no PYTHONPATH and from
+    an unrelated working directory."""
+    script = Path(gs.__file__).resolve()
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)  # don't let an inherited path mask the bug
+    proc = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=tmp_path,  # neutral CWD proves the fix is location-independent
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "usage:" in proc.stdout.lower()
 
 
 def _write_beats(tmp_path: Path, n=2) -> Path:

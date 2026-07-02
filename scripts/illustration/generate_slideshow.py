@@ -11,6 +11,13 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 
+# Allow direct invocation (`python scripts/illustration/generate_slideshow.py ...`):
+# Python only puts this file's own directory on sys.path, so ensure the repo root
+# (which makes `scripts` importable as a namespace package) is present too.
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 from scripts.common.errors import QuotaExceeded, RefusedByPolicy
 from scripts.illustration.character_library import (
     Character,

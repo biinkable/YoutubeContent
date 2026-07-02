@@ -70,7 +70,100 @@ Claude will read this project's `SKILL.md`, follow the research subsystem's skil
 
 ---
 
-## Running tests
+## Illustration subsystem
+
+### Setup
+
+#### 1. Get an OpenAI API key (paid)
+
+1. Go to [OpenAI Platform](https://platform.openai.com/account/api-keys).
+2. Create or use an existing API key. **Note:** This requires a paid OpenAI account with active billing.
+3. Copy `.env.example` to `.env` if you haven't already (see research setup above).
+4. Edit `.env` and add your key:
+
+        OPENAI_API_KEY=sk-...your-key-here...
+
+**Warning:** Never commit `.env` to version control. `.env.example` lists the key name for reference but does not contain any real keys.
+
+#### 2. Install illustration dependencies
+
+    pip install -r scripts/illustration/requirements.txt
+
+### Usage
+
+The illustration subsystem generates one 16:9 landscape image per script beat, starring a recurring character styled with GPT-image-2 (reference-based generation).
+
+#### Workflow 1: Add a new character
+
+1. Provide one or more reference images of your character (any angle or pose).
+2. Claude writes a short identity description: shape, colors, distinctive features, art style, and demeanor.
+3. Claude adds the character to the library and previews sample frames:
+
+        python scripts/illustration/generate_slideshow.py --character <slug> --preview --out outputs/<run-id>/preview --yes
+
+4. Review the preview. If you're happy, keep it; if not, provide feedback and Claude adjusts the description or images.
+
+#### Workflow 2: Generate a video's slideshow
+
+1. Confirm which character to use (Claude lists available characters).
+2. Provide a beats file (for now, hand-written YAML; later from the script subsystem). Format:
+
+        beats:
+          - id: 1
+            scene: "standing and facing the viewer, full body, neutral pose"
+          - id: 2
+            scene: "in mid-action, gesturing with energy"
+
+3. Claude shows the estimated cost and image count, then runs:
+
+        python scripts/illustration/generate_slideshow.py \
+          --character <slug> --beats <path-to-beats.yaml> \
+          --out outputs/<run-id>/images --quality high --yes
+
+4. Review the generated images. To regenerate a single frame:
+
+        python scripts/illustration/generate_slideshow.py \
+          --character <slug> --beats <path-to-beats.yaml> \
+          --out outputs/<run-id>/images --only 3 --yes
+
+5. Claude reports what was generated and any policy-refused frames.
+
+### Cost and image size
+
+- **High quality:** ~$0.17 per image
+- **Medium quality:** ~$0.04 per image
+- **Typical 16:9 video:** 16 images at high quality = ~$2.72 total; budgets are typically $1–2 per video
+
+Images are generated at 1536×1024 (16:9 landscape).
+
+### Command-line reference
+
+```bash
+python scripts/illustration/generate_slideshow.py \
+  --character <slug>           # Character slug in the library (required)
+  --beats <path>               # Path to beats YAML file (required unless --preview)
+  --out <path>                 # Output directory, e.g. outputs/<run-id>/images (required)
+  --quality [high|medium]      # Override default quality (optional)
+  --preview                    # Use 3 built-in sample scenes instead of beats (optional)
+  --only <id1,id2,...>         # Regenerate only these beat IDs (optional)
+  --allow-large                # Permit runs above max_images_per_run limit (optional)
+  --library <path>             # Character library directory, default: characters (optional)
+  --yes                        # Skip interactive confirmation (optional)
+```
+
+### Running tests
+
+Test the entire research and illustration subsystems:
+
+    python -m pytest scripts -v
+
+Test only illustration subsystem:
+
+    python -m pytest scripts/illustration -v
+
+---
+
+## Running tests (research subsystem)
 
     python -m pytest scripts/research/tests -v --ignore=scripts/research/tests/test_integration.py
 

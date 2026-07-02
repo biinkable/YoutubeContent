@@ -1,0 +1,5 @@
+# Defaults for the illustration subsystem. Override per-run via CLI flags.
+quality: high            # high | medium
+size: "1536x1024"        # 16:9 landscape (GPT-image-2)
+preview_count: 3         # sample frames generated when adding a new character
+max_images_per_run: 12   # guardrail; exceeding requires explicit confirmation

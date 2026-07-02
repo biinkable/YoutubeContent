@@ -9,7 +9,7 @@ Generate one 16:9 illustration per script beat, starring a chosen recurring char
 
 ## Prerequisites
 
-- `OPENAI_API_KEY` must be in `.env` (paid). If missing, the CLI exits 2 — tell the user to add it.
+- An image-provider key must be in `.env`. Default provider is **kie.ai** (cheaper GPT-image-2), so `KIE_API_KEY` must be set. If using `provider: openai` (config) or `--provider openai`, `OPENAI_API_KEY` must be set instead. If the required key is missing, the CLI exits 2 — tell the user to add it. A provider/API failure mid-run exits 6.
 
 ## Adding a new character
 

@@ -74,16 +74,23 @@ Claude will read this project's `SKILL.md`, follow the research subsystem's skil
 
 ### Setup
 
-#### 1. Get an OpenAI API key (paid)
+#### 1. Get an image-provider API key
 
-1. Go to [OpenAI Platform](https://platform.openai.com/account/api-keys).
-2. Create or use an existing API key. **Note:** This requires a paid OpenAI account with active billing.
+The illustration subsystem generates with **GPT-image-2**. By default it routes through
+**[kie.ai](https://kie.ai/)** — a cheaper gateway to GPT-image-2 — and can fall back to
+OpenAI's own API (set `provider: openai` in `config/illustration-defaults.yaml`, or pass
+`--provider openai`).
+
+1. **kie.ai (default, cheaper):** create a key at [kie.ai/api-key](https://kie.ai/api-key).
+2. **OpenAI (optional fallback, paid):** create a key at [OpenAI Platform](https://platform.openai.com/account/api-keys) — requires active billing.
 3. Copy `.env.example` to `.env` if you haven't already (see research setup above).
-4. Edit `.env` and add your key:
+4. Edit `.env` and add whichever key matches your provider:
 
+        KIE_API_KEY=...your-kie-key-here...
+        # or, for the OpenAI provider:
         OPENAI_API_KEY=sk-...your-key-here...
 
-**Warning:** Never commit `.env` to version control. `.env.example` lists the key name for reference but does not contain any real keys.
+**Warning:** Never commit `.env` to version control. `.env.example` lists the key names for reference but does not contain any real keys.
 
 #### 2. Install illustration dependencies
 
@@ -130,11 +137,18 @@ The illustration subsystem generates one 16:9 landscape image per script beat, s
 
 ### Cost and image size
 
-- **High quality:** ~$0.17 per image
-- **Medium quality:** ~$0.04 per image
-- **Typical 16:9 video:** 16 images at high quality = ~$2.72 total; budgets are typically $1–2 per video
+Cost depends on the provider. **kie.ai (default)** is markedly cheaper than OpenAI:
 
-Images are generated at 1536×1024 (16:9 landscape).
+| Provider | High (2K) | Medium (1K) |
+|----------|-----------|-------------|
+| kie.ai (default) | ~$0.06/image\* | ~$0.03/image\* |
+| OpenAI | ~$0.17/image | ~$0.04/image |
+
+\*kie.ai bills in credits — the USD figures are estimates used only for the pre-run cost
+guardrail. Confirm the real numbers on your [kie.ai dashboard](https://kie.ai/api-key) and
+adjust `cost_per_image` in `config/illustration-defaults.yaml`.
+
+Images are generated at 1536×1024 (mapped to kie.ai aspect ratio 3:2).
 
 ### Command-line reference
 

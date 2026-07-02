@@ -59,7 +59,11 @@ on (human-in-the-loop).
 - **Character design (locked in):** image-referenced generation that **preserves
   each character's own look** — *not* the ian-xiaohei hand-drawn house style.
   One recurring character per video. High quality with a preview step for new
-  characters. Budget ≈ **$1/video** (~$0.17/image at high quality).
+  characters. Budget ≈ **$1/video** — much less on the default kie.ai provider
+  (~$0.06/image high vs OpenAI's ~$0.17).
+- **Image provider is swappable (default kie.ai for cost).** `KieImageClient` and
+  `OpenAIImageClient` share one `generate()` interface; pick via `provider:` config
+  or `--provider`. Chosen 2026-07-02 to cut per-video image cost.
 - **Shared plumbing** lives in `scripts/common/` (error taxonomy + retry).
   `pyproject.toml` sets `pythonpath=["."]` — `scripts/` is a namespace package,
   so **there is no `__init__.py`** and there must not be one.
@@ -92,26 +96,37 @@ config/seed-channels.yaml  # YOU add channels here
 fresh session ("let's start a new video").
 
 ### Subsystem 5 — Illustration (built & pushed)
-Character library + GPT-image-2 slideshow generator.
+Character library + GPT-image-2 slideshow generator. **Two providers**, selected by
+`provider:` in config (default `kie`) or `--provider`:
 
 ```
 scripts/common/errors.py           # ApiError/Transient/QuotaExceeded/RefusedByPolicy + retry_on_transient
 scripts/illustration/
-  openai_image.py                  # GPT-image-2 client (images.edit), reference cap = 16
+  image_result.py                  # shared GeneratedImage dataclass (both providers)
+  kie_image.py                     # DEFAULT: kie.ai GPT-image-2 (async: upload->create->poll->download)
+  openai_image.py                  # fallback: OpenAI GPT-image-2 (images.edit), reference cap = 16
   character_library.py             # add/list/load characters; frozen Character dataclass
-  generate_slideshow.py            # run() + CLI, cost estimate, preview mode, exit codes
+  generate_slideshow.py            # run() + CLI, provider select, cost estimate, preview, exit codes
 skills/illustration/               # SKILL.md + references/composition.md
-config/illustration-defaults.yaml
+config/illustration-defaults.yaml  # provider, quality->resolution, cost_per_image estimates
 characters/                        # YOUR character library (per-character reference images + meta)
 ```
 
-**CLI exit codes:** `0` ok · `2` missing key · `3` quota · `4` over
-max-images-per-run without `--allow-large` · `5` bad slug / empty beats.
-**Cost:** high `$0.17`/image, medium `$0.04`/image.
+**kie.ai flow:** reference images are uploaded (base64) to get URLs, then
+`createTask` (`gpt-image-2-image-to-image`) → poll `recordInfo` until `success` →
+download the result URL. `size`→`aspect_ratio` (1536x1024→3:2), `quality`→`resolution`
+(high→2K, medium→1K). Reference cap 16 (both providers).
 
-**Before it's usable:** run the manual smoke test (§5) — every test mocks the
-OpenAI call, so the *real* GPT-image-2 API surface is the one thing not yet
-exercised. That's where any API mismatch would surface.
+**CLI exit codes:** `0` ok · `2` missing key · `3` quota · `4` over
+max-images-per-run without `--allow-large` · `5` bad slug / empty beats / unknown
+provider · `6` provider/API error mid-run.
+**Cost (estimates):** kie.ai high(2K) `~$0.06`, medium(1K) `~$0.03`; OpenAI high
+`$0.17`, medium `$0.04`. kie numbers are guardrail estimates — confirm on the
+[kie.ai dashboard](https://kie.ai/api-key) and adjust `cost_per_image` in config.
+
+**Smoke-tested against the real OpenAI GPT-image-2 API (Task 10, character "blobby").**
+The kie.ai path is fully covered by mocked unit tests; its live API surface is
+verified once `KIE_API_KEY` is in `.env` and a real kie run is made.
 
 ---
 
@@ -144,13 +159,15 @@ any commit; never pushed). These rules exist because of that.
 
 ## 5. Smoke tests (the last mile for each built subsystem)
 
-### Illustration (Ill Task 10)
+### Illustration (Ill Task 10 — done for OpenAI; repeat for kie.ai)
 In a fresh Claude Code session in this repo:
-1. Confirm `OPENAI_API_KEY` is in `.env` (it is).
+1. Confirm the provider key is in `.env`: `KIE_API_KEY` for the default kie.ai
+   provider (or `OPENAI_API_KEY` if using `--provider openai`).
 2. Say *"add a new character"* and provide an image.
 3. Claude describes it, runs a **preview** (2–3 frames), and shows them.
 4. Confirm the character looks consistent across frames. ✅ = illustration works
-   end-to-end against the real API.
+   end-to-end against the real API. (Already ✅ on OpenAI with "blobby"; re-run
+   once on kie.ai to verify that provider's live API.)
 
 ### Research
 1. Confirm `YOUTUBE_API_KEY` in `.env`.

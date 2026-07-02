@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -13,14 +12,12 @@ from scripts.common.errors import (
     TransientError,
     retry_on_transient,
 )
+from scripts.illustration.image_result import GeneratedImage
+
+__all__ = ["GeneratedImage", "OpenAIImageClient"]
 
 _MODEL = "gpt-image-2"
 _REFERENCE_CAP = 16
-
-
-@dataclass(frozen=True)
-class GeneratedImage:
-    png_bytes: bytes
 
 
 def _classify(exc: Exception) -> str:

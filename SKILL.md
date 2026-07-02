@@ -11,11 +11,9 @@ The full pipeline is:
 
 1. **Research** (implemented) — mine user's seed channels for recent viral videos.
 2. Topic generation (not yet built)
-3. Character-fork illustration skill (not yet built)
-4. Script writing (not yet built)
-5. TTS (not yet built)
-6. Image generation (not yet built)
-7. Video stitching (not yet built)
+3. Script writing (not yet built)
+4. **Character Illustration** (implemented) — see `skills/illustration/SKILL.md` for adding characters and generating slideshow images.
+5. Video stitching (not yet built)
 
 Stages run in order. Each stage's output lands in `outputs/<run-id>/` for the next stage to consume.
 

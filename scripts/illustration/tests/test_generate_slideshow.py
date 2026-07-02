@@ -99,3 +99,21 @@ def test_run_only_regenerates_selected_and_preserves_others(sample_character_dir
     assert (out / "01-foxy.png").read_bytes() == b"V1"   # preserved
     assert (out / "02-foxy.png").read_bytes() == b"V2"   # regenerated
     assert [f["id"] for f in manifest["frames"]] == [1, 2]
+
+
+def test_run_caps_reference_images_at_16(tmp_path: Path):
+    from scripts.illustration.character_library import Character
+    refs = []
+    for i in range(17):
+        p = tmp_path / f"{i:02d}.png"
+        p.write_bytes(b"x")
+        refs.append(p)
+    character = Character(slug="big", display_name="Big", reference_images=refs, description="d")
+    out = tmp_path / "run" / "images"
+    client = MagicMock()
+    client.generate.return_value = GeneratedImage(png_bytes=b"X")
+    manifest = run(character=character, beats=[{"id": 1, "scene": "x"}], out_dir=out, quality="high", image_client=client)
+    # 17 refs -> 16 used, 1 dropped
+    assert len(manifest["dropped_reference_images"]) == 1
+    _, kwargs = client.generate.call_args
+    assert len(kwargs["reference_images"]) == 16

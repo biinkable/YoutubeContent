@@ -1,0 +1,1 @@
+A pudgy, egg-shaped white blob mascot with stubby little arms and two small feet, a tiny cowlick tuft on top of its head, big round black eyes, thick expressive black eyebrows, and a wide toothy grin showing two small lower teeth; smooth matte-white soft-vinyl 3D render with soft studio lighting; curious, friendly, and perpetually cheerful.
